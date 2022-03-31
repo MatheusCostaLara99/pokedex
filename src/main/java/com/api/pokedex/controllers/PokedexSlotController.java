@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.Optional;
+import java.util.UUID;
 
 @RestController
 @CrossOrigin(origins = "*", maxAge = 3600)
@@ -40,8 +42,43 @@ public class PokedexSlotController {
 
     }
 
-    @GetMapping
+    @GetMapping()
     public ResponseEntity<Page<PokedexSlotModel>> getAllPokedexSlots(@PageableDefault(page = 0, size = 10, sort = "id", direction = Sort.Direction.ASC)Pageable pageable){
         return ResponseEntity.status(HttpStatus.OK).body(pokedexSlotService.findAll(pageable));
+    }
+    @GetMapping("/{id}")
+    public ResponseEntity<Object> getOnePokedexSlot(@PathVariable(value = "id") UUID id){
+        Optional<PokedexSlotModel> pokedexSlotModelOptional = pokedexSlotService.findById(id);
+        if(!pokedexSlotModelOptional.isPresent()){
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("pokémon not found.");
+        }else{
+            return ResponseEntity.status(HttpStatus.OK).body(pokedexSlotModelOptional.get());
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Object> deletePokedexSlot(@PathVariable(value = "id") UUID id){
+        Optional<PokedexSlotModel> pokedexSlotModelOptional = pokedexSlotService.findById(id);
+        if(!pokedexSlotModelOptional.isPresent()){
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("pokémon not found.");
+        }else{
+            pokedexSlotService.delete(pokedexSlotModelOptional.get());
+            return ResponseEntity.status(HttpStatus.OK).body("Pokémon released successfully!!");
+        }
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Object> updatePokedexSlot(@PathVariable(value = "id") UUID id,
+                                                    @RequestBody @Valid PokedexSlotDto pokedexSlotDto){
+        Optional<PokedexSlotModel> pokedexSlotModelOptional = pokedexSlotService.findById(id);
+        if(!pokedexSlotModelOptional.isPresent()){
+            return ResponseEntity.status(HttpStatus.OK).body("pokémon not found.");
+        }else{
+            var pokedexSlotModel = new PokedexSlotModel();
+            BeanUtils.copyProperties(pokedexSlotDto, pokedexSlotModel);
+            pokedexSlotModel.setId(pokedexSlotModelOptional.get().getId());
+            pokedexSlotModel.setRegistrationDate(pokedexSlotModelOptional.get().getRegistrationDate());
+            return ResponseEntity.status(HttpStatus.OK).body(pokedexSlotService.save(pokedexSlotModel));
+        }
     }
 }
